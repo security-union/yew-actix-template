@@ -10,7 +10,7 @@ Execute `./start_dev.sh` to start all components.
 
 Do a code change to to the yew-ui, types or actix-api and see how everything reloads.
 
-# Pre-requisites
+# Prerequisites
 
 1. Install trunk and `target add wasm32-unknown-unknown` please watch this video for more details: https://youtu.be/In09Lgqxp6Y
 ```

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export TRUNK_SERVE_PORT=8080
-export ACTIX_PORT=8083
+export TRUNK_SERVE_PORT=8081
+export ACTIX_PORT=8086
 
 children=()
 

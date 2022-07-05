@@ -10,7 +10,7 @@ fn app_component() -> Html {
     let actix_url: String = format!("http://localhost:{}", ACTIX_PORT);
     let hello_response = Box::new(use_state(|| None));
     let error = Box::new(use_state(|| None));
-    let forecast_endpoint = Box::new(format!(
+    let endpoint = Box::new(format!(
         "{actix_url}/hello/{name}",
         actix_url = actix_url,
         name = "world",
@@ -18,14 +18,14 @@ fn app_component() -> Html {
     let retry = {
         let hello_response = hello_response.clone();
         let error = error.clone();
-        let forecast_endpoint = forecast_endpoint.clone();
+        let endpoint = endpoint.clone();
         Callback::from(move |_| {
             let hello_response = hello_response.clone();
             let error = error.clone();
-            let forecast_endpoint = forecast_endpoint.clone();
+            let endpoint = endpoint.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let fetched_forecast = Request::get(&forecast_endpoint).send().await;
-                match fetched_forecast {
+                let fetched_response = Request::get(&endpoint).send().await;
+                match fetched_response {
                     Ok(response) => {
                         let json: Result<HelloResponse, _> = response.json().await;
                         match json {
@@ -60,7 +60,7 @@ fn app_component() -> Html {
                 html! {
                     <>
                         {ACTIX_PORT}
-                        <button onclick={retry}>{"Call GET "}{forecast_endpoint}</button>
+                        <button onclick={retry}>{"Call GET "}{endpoint}</button>
                     </>
                 }
             }

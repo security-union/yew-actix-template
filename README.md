@@ -3,6 +3,10 @@
   <img src="https://user-images.githubusercontent.com/1176339/177201719-cd387dae-fdd0-4237-90ec-f140fcfcb49c.png" width="400"/>
 </p>
 
+## YouTube video
+https://www.youtube.com/watch?v=oCiGjrpGk4A
+
+
 Contains 3 sub-projects
 
 1. actix-api: actix web server

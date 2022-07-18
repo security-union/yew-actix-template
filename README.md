@@ -4,8 +4,8 @@
 </p>
 
 ## YouTube videos
-V1. No docker: https://www.youtube.com/watch?v=oCiGjrpGk4A
-
+PART ONE: https://www.youtube.com/watch?v=oCiGjrpGk4A
+PART TWO: https://youtu.be/YzjFk694bFM
 
 Contains 3 sub-projects
 

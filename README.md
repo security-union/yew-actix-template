@@ -4,8 +4,8 @@
 </p>
 
 ## YouTube videos
-PART ONE: https://www.youtube.com/watch?v=oCiGjrpGk4A
-PART TWO: https://youtu.be/YzjFk694bFM
+1. PART ONE: https://www.youtube.com/watch?v=oCiGjrpGk4A
+2. PART TWO: https://youtu.be/YzjFk694bFM
 
 Contains 3 sub-projects
 

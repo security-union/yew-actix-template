@@ -3,8 +3,9 @@
   <img src="https://user-images.githubusercontent.com/1176339/179438927-e09e2f37-9144-41ba-a080-e2c3c250b113.png" width="400"/>
 </p>
 
-## YouTube video
-https://www.youtube.com/watch?v=oCiGjrpGk4A
+## YouTube videos
+V1. No docker: https://www.youtube.com/watch?v=oCiGjrpGk4A
+
 
 Contains 3 sub-projects
 

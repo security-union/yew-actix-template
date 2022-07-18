@@ -17,10 +17,11 @@ async fn greet(name: web::Path<String>) -> Json<HelloResponse> {
 async fn main() -> std::io::Result<()> {
     const ACTIX_PORT: &str = std::env!("ACTIX_PORT");
     const UI_PORT: &str = std::env!("TRUNK_SERVE_PORT");
+    const UI_HOST: &str = std::env!("TRUNK_SERVE_HOST");
 
     HttpServer::new(|| {
         let cors = Cors::default()
-            .allowed_origin(format!("http://localhost:{}", UI_PORT).as_str())
+            .allowed_origin(format!("http://{}:{}", UI_HOST, UI_PORT).as_str())
             .allowed_methods(vec!["GET", "POST"])
             .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
             .allowed_header(http::header::CONTENT_TYPE)

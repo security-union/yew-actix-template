@@ -1,4 +1,4 @@
-# Yew  + Actix Full Stack Template
+# Docker + Actix + Yew Full Stack Template
 <p align="center">
   <img src="https://user-images.githubusercontent.com/1176339/179438927-e09e2f37-9144-41ba-a080-e2c3c250b113.png" width="400"/>
 </p>

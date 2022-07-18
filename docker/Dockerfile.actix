@@ -1,0 +1,3 @@
+FROM rust:1.62-slim-bullseye
+
+RUN cargo install cargo-watch

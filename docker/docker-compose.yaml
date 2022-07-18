@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  yew-ui:
+    volumes:
+      - type: bind
+        source: ../
+        target: /app
+    build: 
+      dockerfile: ../docker/Dockerfile.yew
+    command: bash -c "cd app/yew-ui && trunk serve --address 0.0.0.0"
+    environment:
+      - ACTIX_PORT=8086 
+      - TRUNK_SERVE_PORT=8080
+    ports:
+      - "8080:8080"  
+  actix-api:
+    build: 
+      dockerfile: ../docker/Dockerfile.actix
+    command: bash -c "cd app/actix-api && cargo watch -x \"run\""
+    environment:
+      - ACTIX_PORT=8086
+      - TRUNK_SERVE_PORT=8080
+      - TRUNK_SERVE_HOST=localhost
+    ports:
+      - "8086:8086"
+    volumes:
+      - type: bind
+        source: ../
+        target: /app

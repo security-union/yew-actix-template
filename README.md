@@ -13,11 +13,26 @@ Contains 3 sub-projects
 2. yew-ui: Yew frontend
 3. types: json serializable structures used to communicate the frontend and backend.
 
+# Dockerized workflow
+
+1. Install docker
+
+2. Run one of the supported make commands
+
+```
+make test
+make up
+make down
+make build
+```
+
+# Native build
+
 Execute `./start_dev.sh` to start all components.
 
 Do a code change to to the yew-ui, types or actix-api and see how everything reloads.
 
-# Prerequisites
+# Prerequisites (native)
 
 1. Install rust, cargo and friends. Please watch this video for more details: https://youtu.be/nnuaiW1OhjA
 https://doc.rust-lang.org/cargo/getting-started/installation.html

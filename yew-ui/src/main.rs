@@ -21,7 +21,7 @@ fn truthy(s: String) -> bool {
     ["true".to_string(), "1".to_string()].contains(&s.to_lowercase())
 }
 
-// We need a lazy static block because these vars need to call a 
+// We need a lazy static block because these vars need to call a
 // few functions.
 lazy_static! {
     static ref ENABLE_OAUTH: bool = truthy(std::env!("ENABLE_OAUTH").to_string());
@@ -53,8 +53,19 @@ fn app_component() -> Html {
             client_secret: OAUTH_CLIENT_SECRET.clone(),
         };
 
+        // These scopes are specific to Gmail, please modify as needed.
+        let scopes: Vec<String> = vec![
+            "https://www.googleapis.com/auth/gmail.readonly",
+            "https://www.googleapis.com/auth/gmail.labels",
+            "https://www.googleapis.com/auth/gmail.modify",
+            "https://www.googleapis.com/auth/userinfo.email",
+        ]
+        .iter()
+        .map(|scope| scope.to_string())
+        .collect();
+
         html! {
-            <OAuth2 {config} scopes={vec!["profile".to_string(), "email".to_string()]}>
+            <OAuth2 {config} scopes={scopes}>
                 <Failure><FailureMessage/></Failure>
                 <Authenticated>
                     <HttpGetExample/>

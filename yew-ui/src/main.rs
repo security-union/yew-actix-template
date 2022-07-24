@@ -1,12 +1,78 @@
 use reqwasm::http::Request;
 use types::HelloResponse;
 use yew::prelude::*;
+use yew_oauth2::oauth2::*;
+use yew_oauth2::prelude::*; // use `openid::*` when using OpenID connect
+#[macro_use]
+extern crate lazy_static;
+use gloo_console::log;
 
-// This is read at compile time, please restart ./start_dev.sh if you change this value.
+// This is read at compile time, please restart if you change this value.
 const ACTIX_PORT: &str = std::env!("ACTIX_PORT");
+const OAUTH_CLIENT_ID: &str = std::env!("OAUTH_CLIENT_ID");
+const OAUTH_AUTH_URL: &str = std::env!("OAUTH_AUTH_URL");
+const OAUTH_TOKEN_URL: &str = std::env!("OAUTH_TOKEN_URL");
+
+fn truthy(s: String) -> bool {
+    ["true".to_string(), "1".to_string()].contains(&s.to_lowercase())
+}
+
+// We need a lazy static block because these vars need to call a 
+// few functions.
+lazy_static! {
+    static ref ENABLE_OAUTH: bool = truthy(std::env!("ENABLE_OAUTH").to_string());
+    static ref OAUTH_CLIENT_SECRET: Option<String> = {
+        let secret = std::env!("OAUTH_CLIENT_SECRET");
+        if secret != "" {
+            Some(secret.to_string())
+        } else {
+            None
+        }
+    };
+}
 
 #[function_component(App)]
 fn app_component() -> Html {
+    log!("OAuth enabled: {}", *ENABLE_OAUTH);
+    if *ENABLE_OAUTH {
+        let login = Callback::from(|_: MouseEvent| {
+            OAuth2Dispatcher::<Client>::new().start_login();
+        });
+        let logout = Callback::from(|_: MouseEvent| {
+            OAuth2Dispatcher::<Client>::new().logout();
+        });
+
+        let config = Config {
+            client_id: OAUTH_CLIENT_ID.to_string(),
+            auth_url: OAUTH_AUTH_URL.to_string(),
+            token_url: OAUTH_TOKEN_URL.to_string(),
+            client_secret: OAUTH_CLIENT_SECRET.clone(),
+        };
+
+        html! {
+            <OAuth2 {config} scopes={vec!["profile".to_string(), "email".to_string()]}>
+                <Failure><FailureMessage/></Failure>
+                <Authenticated>
+                    <p> <button onclick={logout}>{ "Logout" }</button> </p>
+                    <h1>{"Authenticated!"}</h1>
+                    <HttpGetExample/>
+                </Authenticated>
+                <NotAuthenticated>
+                    <>
+                        <input type="image" onclick={login.clone()} src="/assets/btn_google.png" />
+                    </>
+                </NotAuthenticated>
+            </OAuth2>
+        }
+    } else {
+        html! {
+            <HttpGetExample/>
+        }
+    }
+}
+
+#[function_component(HttpGetExample)]
+fn get_example() -> Html {
     let actix_url: String = format!("http://localhost:{}", ACTIX_PORT);
     let hello_response = Box::new(use_state(|| None));
     let error = Box::new(use_state(|| None));

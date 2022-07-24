@@ -1,3 +1,5 @@
+mod components;
+
 use reqwasm::http::Request;
 use types::HelloResponse;
 use yew::prelude::*;
@@ -6,6 +8,8 @@ use yew_oauth2::prelude::*; // use `openid::*` when using OpenID connect
 #[macro_use]
 extern crate lazy_static;
 use gloo_console::log;
+
+use crate::components::ViewAuthInfo;
 
 // This is read at compile time, please restart if you change this value.
 const ACTIX_PORT: &str = std::env!("ACTIX_PORT");
@@ -53,9 +57,9 @@ fn app_component() -> Html {
             <OAuth2 {config} scopes={vec!["profile".to_string(), "email".to_string()]}>
                 <Failure><FailureMessage/></Failure>
                 <Authenticated>
-                    <p> <button onclick={logout}>{ "Logout" }</button> </p>
-                    <h1>{"Authenticated!"}</h1>
                     <HttpGetExample/>
+                    <ViewAuthInfo/>
+                    <p> <button onclick={logout}>{ "Logout" }</button> </p>
                 </Authenticated>
                 <NotAuthenticated>
                     <>

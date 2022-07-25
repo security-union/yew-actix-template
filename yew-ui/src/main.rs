@@ -41,14 +41,10 @@ lazy_static! {
 fn app_component() -> Html {
     log!("OAuth enabled: {}", *ENABLE_OAUTH);
     if *ENABLE_OAUTH {
-        
-
         let login = Callback::from(|_: MouseEvent| {
-            let mut query: HashMap<String,String> = HashMap::new();
+            let mut query: HashMap<String, String> = HashMap::new();
             query.insert("access_type".into(), "offline".into());
-            OAuth2Dispatcher::<Client>::new().start_login_opts(LoginOptions {
-                query,
-            });
+            OAuth2Dispatcher::<Client>::new().start_login_opts(LoginOptions { query });
         });
         let logout = Callback::from(|_: MouseEvent| {
             OAuth2Dispatcher::<Client>::new().logout();
@@ -67,7 +63,7 @@ fn app_component() -> Html {
             "https://www.googleapis.com/auth/gmail.labels",
             "https://www.googleapis.com/auth/gmail.modify",
             "https://www.googleapis.com/auth/userinfo.email",
-            "https://www.googleapis.com/auth/userinfo.profile"
+            "https://www.googleapis.com/auth/userinfo.profile",
         ]
         .iter()
         .map(|scope| scope.to_string())

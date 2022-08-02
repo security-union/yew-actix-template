@@ -1,72 +1,69 @@
-mod components;
-
 use reqwasm::http::Request;
 use types::HelloResponse;
 use yew::prelude::*;
-use yew_oauth2::oauth2::*;
-use yew_oauth2::prelude::*; // use `openid::*` when using OpenID connect
 #[macro_use]
 extern crate lazy_static;
 use gloo_console::log;
+use gloo_utils::document;
+use gloo_utils::window;
+use wasm_bindgen::JsCast;
+use web_sys::HtmlDocument;
 
-use crate::components::ViewAuthInfo;
+use yew_router::prelude::*;
 
 // This is read at compile time, please restart if you change this value.
 const ACTIX_PORT: &str = std::env!("ACTIX_PORT");
-const OAUTH_CLIENT_ID: &str = std::env!("OAUTH_CLIENT_ID");
-const OAUTH_AUTH_URL: &str = std::env!("OAUTH_AUTH_URL");
-const OAUTH_TOKEN_URL: &str = std::env!("OAUTH_TOKEN_URL");
+const LOGIN_URL: &str = std::env!("LOGIN_URL");
 
 fn truthy(s: String) -> bool {
     ["true".to_string(), "1".to_string()].contains(&s.to_lowercase())
 }
 
-// We need a lazy static block because these vars need to call a 
+// We need a lazy static block because these vars need to call a
 // few functions.
 lazy_static! {
     static ref ENABLE_OAUTH: bool = truthy(std::env!("ENABLE_OAUTH").to_string());
-    static ref OAUTH_CLIENT_SECRET: Option<String> = {
-        let secret = std::env!("OAUTH_CLIENT_SECRET");
-        if secret != "" {
-            Some(secret.to_string())
-        } else {
-            None
-        }
-    };
+}
+
+#[derive(Clone, Routable, PartialEq)]
+enum Route {
+    #[at("/login")]
+    Login,
+    #[at("/")]
+    Main,
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+}
+
+fn switch(routes: &Route) -> Html {
+    match routes {
+        Route::Login => html! { <Login/> },
+        Route::Main => html! {
+            <HttpGetExample/>
+        },
+        Route::NotFound => html! { <h1>{ "404" }</h1> },
+    }
+}
+
+#[function_component(Login)]
+fn login() -> Html {
+    let login = Callback::from(|_: MouseEvent| {
+        window().location().set_href(LOGIN_URL).ok();
+    });
+    html! {<>
+        <input type="image" onclick={login.clone()} src="/assets/btn_google.png" />
+    </>}
 }
 
 #[function_component(App)]
 fn app_component() -> Html {
     log!("OAuth enabled: {}", *ENABLE_OAUTH);
     if *ENABLE_OAUTH {
-        let login = Callback::from(|_: MouseEvent| {
-            OAuth2Dispatcher::<Client>::new().start_login();
-        });
-        let logout = Callback::from(|_: MouseEvent| {
-            OAuth2Dispatcher::<Client>::new().logout();
-        });
-
-        let config = Config {
-            client_id: OAUTH_CLIENT_ID.to_string(),
-            auth_url: OAUTH_AUTH_URL.to_string(),
-            token_url: OAUTH_TOKEN_URL.to_string(),
-            client_secret: OAUTH_CLIENT_SECRET.clone(),
-        };
-
         html! {
-            <OAuth2 {config} scopes={vec!["profile".to_string(), "email".to_string()]}>
-                <Failure><FailureMessage/></Failure>
-                <Authenticated>
-                    <HttpGetExample/>
-                    <ViewAuthInfo/>
-                    <p> <button onclick={logout}>{ "Logout" }</button> </p>
-                </Authenticated>
-                <NotAuthenticated>
-                    <>
-                        <input type="image" onclick={login.clone()} src="/assets/btn_google.png" />
-                    </>
-                </NotAuthenticated>
-            </OAuth2>
+            <BrowserRouter>
+            <Switch<Route> render={Switch::render(switch)} />
+            </BrowserRouter>
         }
     } else {
         html! {
@@ -77,6 +74,19 @@ fn app_component() -> Html {
 
 #[function_component(HttpGetExample)]
 fn get_example() -> Html {
+    if *ENABLE_OAUTH {
+        let document = document().unchecked_into::<HtmlDocument>();
+
+        // If there's a cookie, assume that we are logged in, else redirect to login page.
+        if let Ok(e) = document.cookie() {
+            // TODO: Validate cookie
+            if e.is_empty() {
+                window().location().set_href("/login").ok();
+            }
+        } else {
+            window().location().set_href("/login").ok();
+        }
+    }
     let actix_url: String = format!("http://localhost:{}", ACTIX_PORT);
     let hello_response = Box::new(use_state(|| None));
     let error = Box::new(use_state(|| None));
@@ -110,11 +120,17 @@ fn get_example() -> Html {
             });
         })
     };
+    let logout = Callback::from(|_: MouseEvent| {
+        // Clear the cookie and go to login.
+        document().unchecked_into::<HtmlDocument>().set_cookie("");
+        window().location().set_href("/login").ok();
+    });
 
     match (*hello_response).as_ref() {
         Some(response) => html! {
             <div>
                 <p>{ response.name.clone() }</p>
+                <button onclick={logout}>{"logout"}</button>
             </div>
         },
         None => match (*error).as_ref() {
@@ -123,14 +139,15 @@ fn get_example() -> Html {
                     <>
                         {"error"} {e}
                         <button onclick={retry}>{"retry"}</button>
+                        <button onclick={logout}>{"logout"}</button>
                     </>
                 }
             }
             None => {
                 html! {
                     <>
-                        {ACTIX_PORT}
                         <button onclick={retry}>{"Call GET "}{endpoint}</button>
+                        <button onclick={logout}>{"logout"}</button>
                     </>
                 }
             }

@@ -6,6 +6,8 @@
 ## YouTube videos
 1. PART ONE: https://www.youtube.com/watch?v=oCiGjrpGk4A
 2. PART TWO: https://youtu.be/YzjFk694bFM
+3. PART THREE: https://youtu.be/Wl8oj3KYqxM
+
 
 Contains 3 sub-projects
 

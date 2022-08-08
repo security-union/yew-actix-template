@@ -33,6 +33,7 @@ make build
 This template supports OAuth2 via yew-auth, to configure client_id and other secrets, read the docker-compose => 
 https://github.com/security-union/yew-actix-template/blob/main/docker/docker-compose.yaml
 
+Copy `docker/.env-sample` to `docker/.env` and fill in the variables.
 
 # Native build
 

@@ -16,6 +16,7 @@ services:
       - LOGIN_URL=http://localhost:8080/login
     ports:
       - "80:80"  
+
   actix-api:
     build: 
       dockerfile: ../docker/Dockerfile.actix
@@ -24,16 +25,36 @@ services:
       - ACTIX_PORT=8080
       - TRUNK_SERVE_PORT=80
       - TRUNK_SERVE_HOST=localhost
-      - OAUTH_CLIENT_ID=
-      - OAUTH_AUTH_URL=
-      - OAUTH_TOKEN_URL=
-      - OAUTH_CLIENT_SECRET=
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+      - OAUTH_AUTH_URL=${OAUTH_AUTH_URL}
+      - OAUTH_TOKEN_URL=${OAUTH_TOKEN_URL}
+      - OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}
       - OAUTH_REDIRECT_URL=http://localhost:8080/login/callback
-      - OAUTH_REFRESH_AND_ACCESS_TOKEN_URL=
       - RUST_LOG=info
+      - PG_URL=postgres://postgres:docker@postgres:5432/actix-api-db?sslmode=disable
     ports:
       - "8080:8080"
     volumes:
       - type: bind
         source: ../
         target: /app
+    depends_on:
+      - postgres
+
+  dbmate:
+    volumes:
+        - ../dbmate/db:/app/db
+    build:
+        context: ../dbmate 
+    environment:
+        DATABASE_URL: "postgres://postgres:docker@postgres:5432/actix-api-db?sslmode=disable"
+    depends_on:
+      - postgres
+  
+  postgres:
+    image: postgres:12
+    environment:
+      POSTGRES_PASSWORD: "docker"
+      PGPASSWORD: "docker"
+    ports:
+      - 5432

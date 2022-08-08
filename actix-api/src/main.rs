@@ -10,7 +10,7 @@ use actix_web::{
 };
 
 use crate::db::{get_pool, PostgresPool};
-use anyhow::{anyhow, Result as Anysult};
+use anyhow::Result as Anysult;
 use log::info;
 use oauth2::{CsrfToken, PkceCodeChallenge};
 use reqwest::{header::LOCATION, Client};

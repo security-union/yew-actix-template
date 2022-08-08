@@ -1,8 +1,7 @@
 use postgres::NoTls;
-use r2d2::PooledConnection;
-use postgres::{error::Error, IsolationLevel, NoTls, Transaction};
 use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
+use r2d2::PooledConnection;
+use r2d2_postgres::{postgres, PostgresConnectionManager};
 use std::env;
 
 pub type PostgresPool = Pool<PostgresConnectionManager<NoTls>>;

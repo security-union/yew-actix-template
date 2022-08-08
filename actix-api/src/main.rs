@@ -53,7 +53,10 @@ async fn login(pool: web::Data<PostgresPool>) -> HttpResponse {
 }
 
 #[get("/login/callback")]
-async fn handle_google_oauth_callback(pool: web::Data<PostgresPool>, info: web::Query<AuthRequest>) -> HttpResponse {
+async fn handle_google_oauth_callback(
+    pool: web::Data<PostgresPool>,
+    info: web::Query<AuthRequest>,
+) -> HttpResponse {
     info!("info {:?}", info);
     let client = Client::new();
 
@@ -118,7 +121,7 @@ async fn main() -> std::io::Result<()> {
             .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
             .allowed_header(http::header::CONTENT_TYPE)
             .max_age(3600);
-        
+
         let pool = get_pool();
 
         App::new()

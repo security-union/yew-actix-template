@@ -89,7 +89,6 @@ async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
         let connection = pool.get();
         let mut connection = connection.unwrap();
         let result = connection.query("SELECT * from users", &[]).unwrap();
-        info!("result {:?}", result);
     })
     .await
     .unwrap();
@@ -117,7 +116,6 @@ async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
                     ],
                 )
                 .unwrap();
-            info!("result {:?}", result);
         })
     }
     .await
@@ -132,7 +130,6 @@ async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
                                     pkce_challenge=pkce_challenge.as_str(),
                                     state=&csrf_state.secret()
     );
-    info!("url {}", google_login_url);
     let mut response = HttpResponse::Found();
     response.append_header((LOCATION, google_login_url));
     Ok(response.body(""))

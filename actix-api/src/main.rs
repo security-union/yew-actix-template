@@ -9,6 +9,7 @@ use actix_web::{
     App, Error, HttpResponse, HttpServer, Responder,
 };
 use log::info;
+use oauth2::{CsrfToken, PkceCodeChallenge};
 use reqwest::{header::LOCATION, Client};
 use serde::Deserialize;
 use types::HelloResponse;
@@ -37,7 +38,7 @@ const AFTER_LOGIN_URL: &str = "http://localhost/";
 #[get("/login")]
 async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     // TODO: verify if user exists in the db by looking at the session cookie, (if the client provides one.)
-
+    let pool2 = pool.clone();
     // TODO: handle error.
     let user = web::block(move || {
         let connection = pool.get();
@@ -48,12 +49,42 @@ async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     .await
     .unwrap();
 
+    let csrf_state = CsrfToken::new_random();
+    let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
+    // Store request
+    let store_request = {
+        let csrf_state = csrf_state.clone();
+        let pkce_challenge = pkce_challenge.clone();
+        let pkce_verifier = pkce_verifier.secret().clone();
+        web::block(move || {
+            let connection = pool2.get();
+            let mut connection = connection.unwrap();
+            let result = connection
+                .query(
+                    "INSERT INTO oauth_requests (pkce_challenge, pkce_verifier, csrf_state)
+                       VALUES ($1, $2, $3)
+            ",
+                    &[
+                        &pkce_challenge.as_str(),
+                        &pkce_verifier.as_str(),
+                        &csrf_state.secret().clone(),
+                    ],
+                )
+                .unwrap();
+            info!("result {:?}", result);
+        })
+    }
+    .await
+    .unwrap();
+
     // TODO: add verify code, this needs a database.
-    let google_login_url = format!("{oauth_url}?client_id={client_id}&redirect_uri={redirect_url}&response_type=code&scope={scope}&prompt=select_account",
+    let google_login_url = format!("{oauth_url}?client_id={client_id}&redirect_uri={redirect_url}&response_type=code&scope={scope}&prompt=select_account&pkce_challenge={pkce_challenge}&state={state}",
                                     oauth_url=OAUTH_AUTH_URL,
                                     redirect_url=OAUTH_REDIRECT_URL,
                                     client_id=OAUTH_CLIENT_ID,
-                                    scope=SCOPE
+                                    scope=SCOPE,
+                                    pkce_challenge=pkce_challenge.as_str(),
+                                    state=&csrf_state.secret()
     );
     info!("url {}", google_login_url);
     let mut response = HttpResponse::Found();
@@ -75,6 +106,7 @@ async fn handle_google_oauth_callback(
         ("client_id", OAUTH_CLIENT_ID),
         ("code", &info.code),
         ("client_secret", OAUTH_SECRET),
+        // ("pkce_verifier", pkce_verifier)
     ];
 
     let res = client.post(OAUTH_TOKEN_URL).form(&params).send().await;

@@ -4,72 +4,20 @@ use actix_web::{
         time::{Duration, OffsetDateTime},
         Cookie, SameSite,
     },
-    get, http,
+    error, get, http,
     web::{self, Json},
     App, Error, HttpResponse, HttpServer,
 };
 
-use crate::db::{get_pool, PostgresPool};
-use anyhow::Result as Anysult;
-use log::info;
-use oauth2::{CsrfToken, PkceCodeChallenge};
-use reqwest::{header::LOCATION, Client};
-use serde::{Deserialize, Serialize};
-use std::result;
+use crate::auth::{
+    fetch_oauth_request, generate_and_store_oauth_request, request_token, upsert_user,
+};
+use crate::{
+    auth::AuthRequest,
+    db::{get_pool, PostgresPool},
+};
+use reqwest::header::LOCATION;
 use types::HelloResponse;
-
-pub type Result2<T> = result::Result<T, Error>;
-pub(crate) struct DecodedJwtPartClaims {
-    b64_decoded: Vec<u8>,
-}
-
-pub(crate) fn b64_decode<T: AsRef<[u8]>>(input: T) -> Anysult<Vec<u8>> {
-    base64::decode_config(input, base64::URL_SAFE_NO_PAD).map_err(|e| e.into())
-}
-
-impl DecodedJwtPartClaims {
-    pub fn from_jwt_part_claims(encoded_jwt_part_claims: impl AsRef<[u8]>) -> Anysult<Self> {
-        Ok(Self {
-            b64_decoded: b64_decode(encoded_jwt_part_claims)?,
-        })
-    }
-
-    pub fn deserialize<'a, T: Deserialize<'a>>(&'a self) -> Anysult<T> {
-        Ok(serde_json::from_slice(&self.b64_decoded)?)
-    }
-}
-
-#[derive(Debug, Deserialize)]
-pub struct AuthRequest {
-    state: String,
-    code: String,
-    scope: String,
-    authuser: String,
-    prompt: String,
-}
-
-pub struct OAuthRequest {
-    pkce_challenge: String,
-    pkce_verifier: String,
-    csrf_state: String,
-}
-
-#[derive(Deserialize)]
-pub struct OAuthResponse {
-    access_token: String,
-    token_type: String,
-    scope: String,
-    id_token: String,
-    refresh_token: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Claims {
-    email: String,
-    name: String,
-}
-
-pub mod db;
 
 const OAUTH_CLIENT_ID: &str = std::env!("OAUTH_CLIENT_ID");
 const OAUTH_AUTH_URL: &str = std::env!("OAUTH_AUTH_URL");
@@ -78,136 +26,102 @@ const OAUTH_SECRET: &str = std::env!("OAUTH_CLIENT_SECRET");
 const OAUTH_REDIRECT_URL: &str = std::env!("OAUTH_REDIRECT_URL");
 const SCOPE: &str = "email%20profile%20openid";
 const AFTER_LOGIN_URL: &str = "http://localhost/";
+const ACTIX_PORT: &str = std::env!("ACTIX_PORT");
+const UI_PORT: &str = std::env!("TRUNK_SERVE_PORT");
+const UI_HOST: &str = std::env!("TRUNK_SERVE_HOST");
 
+pub mod auth;
+pub mod db;
+
+/**
+ * Function used by the Web Application to initiate OAuth.
+ *
+ * The server responds with the OAuth login URL.
+ *
+ * The server implements PKCE (Proof Key for Code Exchange) to protect itself and the users.
+ */
 #[get("/login")]
 async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     // TODO: verify if user exists in the db by looking at the session cookie, (if the client provides one.)
     let pool2 = pool.clone();
-    // TODO: handle error.
-    let user = web::block(move || {
-        let pool = pool.clone();
-        let connection = pool.get();
-        let mut connection = connection.unwrap();
-        let result = connection.query("SELECT * from users", &[]).unwrap();
-    })
-    .await
-    .unwrap();
 
-    let csrf_state = CsrfToken::new_random();
-    let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
-    // Store request
-    let store_request = {
+    // 2. Generate and Store OAuth Request.
+    let (csrf_token, pkce_challenge) = {
         let pool = pool2.clone();
-        let csrf_state = csrf_state.clone();
-        let pkce_challenge = pkce_challenge.clone();
-        let pkce_verifier = pkce_verifier.secret().clone();
-        web::block(move || {
-            let connection = pool.get();
-            let mut connection = connection.unwrap();
-            let result = connection
-                .query(
-                    "INSERT INTO oauth_requests (pkce_challenge, pkce_verifier, csrf_state)
-                       VALUES ($1, $2, $3)
-            ",
-                    &[
-                        &pkce_challenge.as_str(),
-                        &pkce_verifier.as_str(),
-                        &csrf_state.secret().clone(),
-                    ],
-                )
-                .unwrap();
-        })
+        web::block(move || generate_and_store_oauth_request(pool.clone())).await?
     }
-    .await
-    .unwrap();
+    .map_err(|e| {
+        log::error!("{:?}", e);
+        error::ErrorInternalServerError(e)
+    })?;
 
-    // TODO: add verify code, this needs a database.
-    let google_login_url = format!("{oauth_url}?client_id={client_id}&redirect_uri={redirect_url}&response_type=code&scope={scope}&prompt=select_account&pkce_challenge={pkce_challenge}&state={state}",
+    // 3. Craft OAuth Login URL
+    let oauth_login_url = format!("{oauth_url}?client_id={client_id}&redirect_uri={redirect_url}&response_type=code&scope={scope}&prompt=select_account&pkce_challenge={pkce_challenge}&state={state}&access_type=offline",
                                     oauth_url=OAUTH_AUTH_URL,
                                     redirect_url=OAUTH_REDIRECT_URL,
                                     client_id=OAUTH_CLIENT_ID,
                                     scope=SCOPE,
                                     pkce_challenge=pkce_challenge.as_str(),
-                                    state=&csrf_state.secret()
+                                    state=&csrf_token.secret()
     );
+
+    // 4. Redirect the browser to the OAuth Login URL.
     let mut response = HttpResponse::Found();
-    response.append_header((LOCATION, google_login_url));
-    Ok(response.body(""))
+    response.append_header((LOCATION, oauth_login_url));
+    Ok(response.finish())
 }
 
+/**
+ * Handle OAuth callback from Web App.
+ *
+ * This service is responsible for using the provided authentication code to fetch
+ * the OAuth access_token and refresh token.
+ *
+ * It upserts the user using their email and stores the access_token & refresh_code.
+ */
 #[get("/login/callback")]
 async fn handle_google_oauth_callback(
     pool: web::Data<PostgresPool>,
     info: web::Query<AuthRequest>,
-) -> HttpResponse {
-    info!("info {:?}", info);
-    let client = Client::new();
+) -> Result<HttpResponse, Error> {
     let state = info.state.clone();
+
+    // 1. Fetch OAuth request, if this fails, probably a hacker is trying to p*wn us.
     let oauth_request = {
         let pool = pool.clone();
-        web::block(move || {
-            let connection = pool.get();
-            let mut connection = connection.unwrap();
-            let result = connection
-                .query(
-                    "SELECT * FROM oauth_requests WHERE csrf_state=$1",
-                    &[&state],
-                )
-                .unwrap();
-            result.iter().fold(None, |acc, row| {
-                Some(OAuthRequest {
-                    csrf_state: row.get("csrf_state"),
-                    pkce_challenge: row.get("pkce_challenge"),
-                    pkce_verifier: row.get("pkce_verifier"),
-                })
-            })
-        })
+        web::block(move || fetch_oauth_request(pool, state)).await?
     }
+    .map_err(|e| {
+        log::error!("{:?}", e);
+        error::ErrorBadRequest("couldn't find a request, are you a hacker?")
+    })?;
+
+    // 2. Request token from OAuth provider.
+    let (oauth_response, claims) = request_token(
+        OAUTH_REDIRECT_URL,
+        OAUTH_CLIENT_ID,
+        OAUTH_SECRET,
+        &oauth_request.pkce_verifier,
+        OAUTH_TOKEN_URL,
+        &info.code,
+    )
     .await
-    .unwrap()
-    .unwrap();
+    .map_err(|err| {
+        log::error!("{:?}", err);
+        error::ErrorBadRequest("couldn't find a request, are you a hacker?")
+    })?;
 
-    let params = [
-        ("grant_type", "authorization_code"),
-        ("redirect_uri", OAUTH_REDIRECT_URL),
-        ("client_id", OAUTH_CLIENT_ID),
-        ("code", &info.code),
-        ("client_secret", OAUTH_SECRET),
-        ("pkce_verifier", &oauth_request.pkce_verifier),
-    ];
+    // 3. Store tokens and create user.
+    {
+        let claims = claims.clone();
+        web::block(move || upsert_user(pool, &claims, &oauth_response)).await?
+    }
+    .map_err(|err| {
+        log::error!("{:?}", err);
+        error::ErrorInternalServerError(err)
+    })?;
 
-    let response = client
-        .post(OAUTH_TOKEN_URL)
-        .form(&params)
-        .send()
-        .await
-        .unwrap();
-    let oauth_response: OAuthResponse = response.json().await.unwrap();
-    let claims: Vec<&str> = oauth_response.id_token.split(".").collect();
-    let decoded_claims =
-        DecodedJwtPartClaims::from_jwt_part_claims(claims.get(1).unwrap()).unwrap();
-    let claims: Claims = decoded_claims.deserialize().unwrap();
-
-    // Store tokens.
-    let store_tokens =
-        {
-            let claims = claims.clone();
-            let pool = pool.clone();
-            web::block(move || {
-                let connection = pool.get();
-                let mut connection = connection.unwrap();
-                let result = connection
-                .query(
-                    "INSERT INTO users (email, access_token, refresh_token) VALUES ($1, $2, $3)",
-                    &[&claims.email, &oauth_response.access_token, &oauth_response.refresh_token],
-                )
-                .unwrap();
-            })
-        }
-        .await
-        .unwrap();
-
-    // If successful
+    // 4. Create session cookie with email.
     let cookie = Cookie::build("email", claims.email)
         .path("/")
         .same_site(SameSite::Lax)
@@ -215,12 +129,16 @@ async fn handle_google_oauth_callback(
         .expires(OffsetDateTime::now_utc().checked_add(Duration::seconds(360)))
         .finish();
 
+    // 5. Send cookie and redirect browser to AFTER_LOGIN_URL
     let mut response = HttpResponse::Found();
     response.append_header((LOCATION, AFTER_LOGIN_URL));
     response.cookie(cookie);
-    response.body("login success")
+    Ok(response.finish())
 }
 
+/**
+ * Sample service
+ */
 #[get("/hello/{name}")]
 async fn greet(name: web::Path<String>) -> Json<HelloResponse> {
     Json(HelloResponse {
@@ -231,9 +149,6 @@ async fn greet(name: web::Path<String>) -> Json<HelloResponse> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
-    const ACTIX_PORT: &str = std::env!("ACTIX_PORT");
-    const UI_PORT: &str = std::env!("TRUNK_SERVE_PORT");
-    const UI_HOST: &str = std::env!("TRUNK_SERVE_HOST");
 
     // TODO: Deal with https, maybe we should just expose this as an env var?
     let allowed_origin = if UI_PORT != "80" {

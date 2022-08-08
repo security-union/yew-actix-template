@@ -38,11 +38,14 @@ const AFTER_LOGIN_URL: &str = "http://localhost/";
 #[get("/login")]
 async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     // TODO: verify if user exists in the db by looking at the session cookie, (if the client provides one.)
-    let connection = pool.get();
+    
 
     // TODO: handle error.
     let user = web::block(move || {
-        let connection = connection;
+        let connection = pool.get();
+    //     let mut connection = connection.unwrap();
+    //     let result = connection.query("SELECT * from users", &[]).unwrap();
+    //     info!("result {:?}", result);
     })
     .await
     .unwrap();

@@ -1,7 +1,8 @@
 -- migrate:up
 CREATE TABLE oauth_requests (
     pkce_challenge TEXT,
-    pkce_verifier TEXT
+    pkce_verifier TEXT,
+    csrf_state TEXT
 );
 
 CREATE TABLE users (

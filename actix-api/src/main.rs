@@ -6,23 +6,67 @@ use actix_web::{
     },
     get, http,
     web::{self, Json},
-    App, Error, HttpResponse, HttpServer, Responder,
+    App, Error, HttpResponse, HttpServer,
 };
+
+use crate::db::{get_pool, PostgresPool};
+use anyhow::{anyhow, Result as Anysult};
 use log::info;
 use oauth2::{CsrfToken, PkceCodeChallenge};
 use reqwest::{header::LOCATION, Client};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use std::result;
 use types::HelloResponse;
 
-use crate::db::{get_pool, PostgresPool};
+pub type Result2<T> = result::Result<T, Error>;
+pub(crate) struct DecodedJwtPartClaims {
+    b64_decoded: Vec<u8>,
+}
+
+pub(crate) fn b64_decode<T: AsRef<[u8]>>(input: T) -> Anysult<Vec<u8>> {
+    base64::decode_config(input, base64::URL_SAFE_NO_PAD).map_err(|e| e.into())
+}
+
+impl DecodedJwtPartClaims {
+    pub fn from_jwt_part_claims(encoded_jwt_part_claims: impl AsRef<[u8]>) -> Anysult<Self> {
+        Ok(Self {
+            b64_decoded: b64_decode(encoded_jwt_part_claims)?,
+        })
+    }
+
+    pub fn deserialize<'a, T: Deserialize<'a>>(&'a self) -> Anysult<T> {
+        Ok(serde_json::from_slice(&self.b64_decoded)?)
+    }
+}
 
 #[derive(Debug, Deserialize)]
 pub struct AuthRequest {
-    state: Option<String>,
+    state: String,
     code: String,
     scope: String,
     authuser: String,
     prompt: String,
+}
+
+pub struct OAuthRequest {
+    pkce_challenge: String,
+    pkce_verifier: String,
+    csrf_state: String,
+}
+
+#[derive(Deserialize)]
+pub struct OAuthResponse {
+    access_token: String,
+    token_type: String,
+    scope: String,
+    id_token: String,
+    refresh_token: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Claims {
+    email: String,
+    name: String,
 }
 
 pub mod db;
@@ -41,6 +85,7 @@ async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     let pool2 = pool.clone();
     // TODO: handle error.
     let user = web::block(move || {
+        let pool = pool.clone();
         let connection = pool.get();
         let mut connection = connection.unwrap();
         let result = connection.query("SELECT * from users", &[]).unwrap();
@@ -53,11 +98,12 @@ async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
     // Store request
     let store_request = {
+        let pool = pool2.clone();
         let csrf_state = csrf_state.clone();
         let pkce_challenge = pkce_challenge.clone();
         let pkce_verifier = pkce_verifier.secret().clone();
         web::block(move || {
-            let connection = pool2.get();
+            let connection = pool.get();
             let mut connection = connection.unwrap();
             let result = connection
                 .query(
@@ -99,6 +145,30 @@ async fn handle_google_oauth_callback(
 ) -> HttpResponse {
     info!("info {:?}", info);
     let client = Client::new();
+    let state = info.state.clone();
+    let oauth_request = {
+        let pool = pool.clone();
+        web::block(move || {
+            let connection = pool.get();
+            let mut connection = connection.unwrap();
+            let result = connection
+                .query(
+                    "SELECT * FROM oauth_requests WHERE csrf_state=$1",
+                    &[&state],
+                )
+                .unwrap();
+            result.iter().fold(None, |acc, row| {
+                Some(OAuthRequest {
+                    csrf_state: row.get("csrf_state"),
+                    pkce_challenge: row.get("pkce_challenge"),
+                    pkce_verifier: row.get("pkce_verifier"),
+                })
+            })
+        })
+    }
+    .await
+    .unwrap()
+    .unwrap();
 
     let params = [
         ("grant_type", "authorization_code"),
@@ -106,18 +176,42 @@ async fn handle_google_oauth_callback(
         ("client_id", OAUTH_CLIENT_ID),
         ("code", &info.code),
         ("client_secret", OAUTH_SECRET),
-        // ("pkce_verifier", pkce_verifier)
+        ("pkce_verifier", &oauth_request.pkce_verifier),
     ];
 
-    let res = client.post(OAUTH_TOKEN_URL).form(&params).send().await;
+    let response = client
+        .post(OAUTH_TOKEN_URL)
+        .form(&params)
+        .send()
+        .await
+        .unwrap();
+    let oauth_response: OAuthResponse = response.json().await.unwrap();
+    let claims: Vec<&str> = oauth_response.id_token.split(".").collect();
+    let decoded_claims =
+        DecodedJwtPartClaims::from_jwt_part_claims(claims.get(1).unwrap()).unwrap();
+    let claims: Claims = decoded_claims.deserialize().unwrap();
 
-    // Access token.
-    // TODO: save tokens, and user email to a database.
-    info!("response {:?}", &res);
-    info!("body {:?}", res.unwrap().text().await);
+    // Store tokens.
+    let store_tokens =
+        {
+            let claims = claims.clone();
+            let pool = pool.clone();
+            web::block(move || {
+                let connection = pool.get();
+                let mut connection = connection.unwrap();
+                let result = connection
+                .query(
+                    "INSERT INTO users (email, access_token, refresh_token) VALUES ($1, $2, $3)",
+                    &[&claims.email, &oauth_response.access_token, &oauth_response.refresh_token],
+                )
+                .unwrap();
+            })
+        }
+        .await
+        .unwrap();
 
     // If successful
-    let cookie = Cookie::build("name", "value")
+    let cookie = Cookie::build("email", claims.email)
         .path("/")
         .same_site(SameSite::Lax)
         // Session lasts only 360 secs to test cookie expiration.

@@ -43,9 +43,9 @@ async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     // TODO: handle error.
     let user = web::block(move || {
         let connection = pool.get();
-    //     let mut connection = connection.unwrap();
-    //     let result = connection.query("SELECT * from users", &[]).unwrap();
-    //     info!("result {:?}", result);
+        let mut connection = connection.unwrap();
+        let result = connection.query("SELECT * from users", &[]).unwrap();
+        info!("result {:?}", result);
     })
     .await
     .unwrap();

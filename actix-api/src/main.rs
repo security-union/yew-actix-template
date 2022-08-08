@@ -1,13 +1,12 @@
 use actix_cors::Cors;
 use actix_web::{
-    Error,
     cookie::{
         time::{Duration, OffsetDateTime},
         Cookie, SameSite,
     },
     get, http,
     web::{self, Json},
-    App, HttpResponse, HttpServer, Responder,
+    App, Error, HttpResponse, HttpServer, Responder,
 };
 use log::info;
 use reqwest::{header::LOCATION, Client};
@@ -37,14 +36,16 @@ const SCOPE: &str = "email%20profile%20openid";
 const AFTER_LOGIN_URL: &str = "http://localhost/";
 
 #[get("/login")]
-async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error>  {
+async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     // TODO: verify if user exists in the db by looking at the session cookie, (if the client provides one.)
     let connection = pool.get();
 
     // TODO: handle error.
     let user = web::block(move || {
         let connection = connection;
-    }).await.unwrap();
+    })
+    .await
+    .unwrap();
 
     // TODO: add verify code, this needs a database.
     let google_login_url = format!("{oauth_url}?client_id={client_id}&redirect_uri={redirect_url}&response_type=code&scope={scope}&prompt=select_account",

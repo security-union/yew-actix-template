@@ -13,6 +13,8 @@ use reqwest::{header::LOCATION, Client};
 use serde::Deserialize;
 use types::HelloResponse;
 
+use crate::db::{get_pool, PostgresPool};
+
 #[derive(Debug, Deserialize)]
 pub struct AuthRequest {
     state: Option<String>,
@@ -21,6 +23,8 @@ pub struct AuthRequest {
     authuser: String,
     prompt: String,
 }
+
+pub mod db;
 
 const OAUTH_CLIENT_ID: &str = std::env!("OAUTH_CLIENT_ID");
 const OAUTH_AUTH_URL: &str = std::env!("OAUTH_AUTH_URL");
@@ -32,7 +36,7 @@ const SCOPE: &str = "email%20profile%20openid";
 const AFTER_LOGIN_URL: &str = "http://localhost/";
 
 #[get("/login")]
-async fn login() -> HttpResponse {
+async fn login(pool: web::Data<PostgresPool>) -> HttpResponse {
     // TODO: verify if user exists in the db by looking at the session cookie, (if the client provides one.)
 
     // TODO: add verify code, this needs a database.
@@ -49,7 +53,7 @@ async fn login() -> HttpResponse {
 }
 
 #[get("/login/callback")]
-async fn handle_google_oauth_callback(info: web::Query<AuthRequest>) -> HttpResponse {
+async fn handle_google_oauth_callback(pool: web::Data<PostgresPool>, info: web::Query<AuthRequest>) -> HttpResponse {
     info!("info {:?}", info);
     let client = Client::new();
 
@@ -114,8 +118,11 @@ async fn main() -> std::io::Result<()> {
             .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
             .allowed_header(http::header::CONTENT_TYPE)
             .max_age(3600);
+        
+        let pool = get_pool();
 
         App::new()
+            .app_data(web::Data::new(pool.clone()))
             .wrap(cors)
             .service(greet)
             .service(handle_google_oauth_callback)

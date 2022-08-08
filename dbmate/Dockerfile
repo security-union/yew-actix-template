@@ -1,4 +1,4 @@
-FROM amacneil/amacneil/dbmate:v1.12.0
+FROM amacneil/dbmate:v1.12.0
 
 COPY startup.sh / 
 COPY db /app/db

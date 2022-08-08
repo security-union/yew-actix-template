@@ -32,6 +32,7 @@ services:
       - OAUTH_REDIRECT_URL=http://localhost:8080/login/callback
       - OAUTH_REFRESH_AND_ACCESS_TOKEN_URL=
       - RUST_LOG=info
+      - PG_URL=postgres://postgres:docker@postgres:5432/actix-api-db?sslmode=disable
     ports:
       - "8080:8080"
     volumes:
@@ -52,7 +53,7 @@ services:
       - postgres
   
   postgres:
-    image: postres:12
+    image: postgres:12
     environment:
       POSTGRES_PASSWORD: "docker"
       PGPASSWORD: "docker"

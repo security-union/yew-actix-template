@@ -8,20 +8,7 @@ pub type PostgresPool = Pool<PostgresConnectionManager<NoTls>>;
 pub type PostgresConnection = PooledConnection<PostgresConnectionManager<NoTls>>;
 
 pub fn get_database_url() -> String {
-    if let Ok(url) = env::var("PG_URL") {
-        url
-    } else {
-        let db_user = env::var("PG_USER").expect("PG_USER must be set");
-        let db_pass = env::var("PG_PASS").expect("PG_PASS must be set");
-        let db_host = env::var("PG_HOST").expect("PG_HOST must be set");
-        let db_port = env::var("PG_PORT").expect("PG_PORT must be set");
-        let db_name = env::var("PG_DB").expect("PG_DB must be set");
-
-        format!(
-            "user={} password={} host={} port={} dbname={}",
-            db_user, db_pass, db_host, db_port, db_name
-        )
-    }
+    env::var("PG_URL").unwrap()
 }
 
 pub fn get_pool() -> PostgresPool {

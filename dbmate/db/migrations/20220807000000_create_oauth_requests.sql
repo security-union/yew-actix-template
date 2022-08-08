@@ -1,12 +1,12 @@
 -- migrate:up
 CREATE TABLE oauth_requests (
-    state: VARCHAR(255),
+    request_state VARCHAR(255)
 );
 
 CREATE TABLE users (
-    email: VARCHAR(255) PRIMARY KEY,
-    access_token: TEXT,
-    refresh_token: TEXT
+    email VARCHAR(255) PRIMARY KEY,
+    access_token TEXT,
+    refresh_token TEXT
 );
 
 -- migrate:down

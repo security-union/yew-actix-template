@@ -31,14 +31,12 @@ const OAUTH_AUTH_URL: &str = std::env!("OAUTH_AUTH_URL");
 const OAUTH_TOKEN_URL: &str = std::env!("OAUTH_TOKEN_URL");
 const OAUTH_SECRET: &str = std::env!("OAUTH_CLIENT_SECRET");
 const OAUTH_REDIRECT_URL: &str = std::env!("OAUTH_REDIRECT_URL");
-const OAUTH_REFRESH_AND_ACCESS_TOKEN_URL: &str = std::env!("OAUTH_REFRESH_AND_ACCESS_TOKEN_URL");
 const SCOPE: &str = "email%20profile%20openid";
 const AFTER_LOGIN_URL: &str = "http://localhost/";
 
 #[get("/login")]
 async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     // TODO: verify if user exists in the db by looking at the session cookie, (if the client provides one.)
-    
 
     // TODO: handle error.
     let user = web::block(move || {
@@ -79,11 +77,7 @@ async fn handle_google_oauth_callback(
         ("client_secret", OAUTH_SECRET),
     ];
 
-    let res = client
-        .post(OAUTH_REFRESH_AND_ACCESS_TOKEN_URL)
-        .form(&params)
-        .send()
-        .await;
+    let res = client.post(OAUTH_TOKEN_URL).form(&params).send().await;
 
     // Access token.
     // TODO: save tokens, and user email to a database.

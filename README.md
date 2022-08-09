@@ -4,10 +4,11 @@
 </p>
 
 ## YouTube videos
-1. PART ONE: https://www.youtube.com/watch?v=oCiGjrpGk4A
-2. PART TWO: https://youtu.be/YzjFk694bFM
-3. PART THREE: https://youtu.be/Wl8oj3KYqxM
-
+1. PART ONE: Full Stack Rust App Template using Yew + Actix! https://www.youtube.com/watch?v=oCiGjrpGk4A
+2. PART TWO: Add Docker to your full stack Rust app Actix + Yew App https://youtu.be/YzjFk694bFM
+3. PART THREE: SERVER SIDE OAUTH with Actix Web, Yew and Rust (analyzing GRAMMARLY) https://youtu.be/Wl8oj3KYqxM
+4. PART FOUR: I added a Database To Our YEW ACTIX Template To Store Users And OAuth Tokens.
+ https://youtu.be/ENgMHIQk7T8
 
 Contains 3 sub-projects
 

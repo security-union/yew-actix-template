@@ -4,7 +4,7 @@
 </p>
 
 ## 👨‍💻 YouTube videos
-1. Full Stack Rust App Template using Yew + Actix! https://www.youtube.com/watch?v=oCiGjrpGk4A
+1. Full Stack Rust App Template using Yew + Actix! https://youtu.be/oCiGjrpGk4A
 2. Add Docker to your full stack Rust app Actix + Yew App https://youtu.be/YzjFk694bFM
 3. SERVER SIDE OAUTH with Actix Web, Yew and Rust (analyzing GRAMMARLY) https://youtu.be/Wl8oj3KYqxM
 4. I added a Database To Our YEW ACTIX Template To Store Users And OAuth Tokens.

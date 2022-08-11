@@ -11,7 +11,7 @@
  https://youtu.be/ENgMHIQk7T8
  
 ## 👉 Join our Discord Community
-You can join our Discord Community, here is the [invite link]((https://discord.gg/JP38NRe4C).
+You can join our Discord Community, here is the [invite link](https://discord.gg/JP38NRe4CJ).
 
 ## 👨‍💻 Project Structure
 

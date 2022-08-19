@@ -25,10 +25,10 @@ const OAUTH_TOKEN_URL: &str = std::env!("OAUTH_TOKEN_URL");
 const OAUTH_SECRET: &str = std::env!("OAUTH_CLIENT_SECRET");
 const OAUTH_REDIRECT_URL: &str = std::env!("OAUTH_REDIRECT_URL");
 const SCOPE: &str = "email%20profile%20openid";
-const AFTER_LOGIN_URL: &str = "http://localhost/";
 const ACTIX_PORT: &str = std::env!("ACTIX_PORT");
 const UI_PORT: &str = std::env!("TRUNK_SERVE_PORT");
 const UI_HOST: &str = std::env!("TRUNK_SERVE_HOST");
+const AFTER_LOGIN_URL: &'static str = concat!("http://localhost:", std::env!("TRUNK_SERVE_PORT"));
 
 pub mod auth;
 pub mod db;

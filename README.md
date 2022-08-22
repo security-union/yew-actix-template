@@ -1,6 +1,6 @@
 # Docker + Actix + Yew Full Stack Template
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/1176339/179438927-e09e2f37-9144-41ba-a080-e2c3c250b113.png" width="400"/>
+  <img src="https://user-images.githubusercontent.com/1176339/185847040-ab7ec6fa-2f49-43cc-b3a2-0e20b0ae4583.png" width="400"/>
 </p>
 
 ## 👨‍💻 YouTube videos

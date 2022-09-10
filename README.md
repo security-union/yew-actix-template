@@ -1,7 +1,7 @@
 # Docker + Actix + Yew Full Stack Template
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/1176339/185847040-ab7ec6fa-2f49-43cc-b3a2-0e20b0ae4583.png" width="400"/>
-</p>
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/oCiGjrpGk4A/maxresdefault.jpg)](https://youtu.be/oCiGjrpGk4A "YouTube video")
+
 
 ## 👨‍💻 YouTube videos
 1. Full Stack Rust App Template using Yew + Actix! https://youtu.be/oCiGjrpGk4A

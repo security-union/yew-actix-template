@@ -42,24 +42,3 @@ Copy `docker/.env-sample` to `docker/.env` and fill in the variables. Assuming t
 
 Once you have a Google Cloud developer account, you can generate the values for the `OAUTH_CLIENT_ID` and `OAUTH_SECRET` variables using the following steps: [Setting up OAuth 2.0](https://support.google.com/cloud/answer/6158849?hl=en). As part of registering your web app with Google Cloud to associate with the OAuth credentials, you will need to configure your app to request the following scopes: `email`, `profile`, and `openid`.
 
-# Native build
-
-Execute `./start_dev.sh` to start all components.
-
-Do a code change to to the yew-ui, types or actix-api and see how everything reloads.
-
-# Prerequisites (native)
-
-1. Install rust, cargo and friends. Please watch this video for more details: https://youtu.be/nnuaiW1OhjA
-https://doc.rust-lang.org/cargo/getting-started/installation.html
-
-2. Install trunk and `target add wasm32-unknown-unknown` please watch this video for more details: https://youtu.be/In09Lgqxp6Y
-```
-cargo install --locked trunk
-rustup target add wasm32-unknown-unknown
-```
-
-3. Install cargo watch 
-```
-cargo install cargo-watch
-```

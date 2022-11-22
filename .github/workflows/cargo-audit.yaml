@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: security-union/audit-check@1
+      - uses: security-union/audit-check@2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 

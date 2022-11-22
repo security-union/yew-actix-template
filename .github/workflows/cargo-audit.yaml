@@ -14,7 +14,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           cargo-lock-path: ./actix-api
-      - uses: security-union/audit-check@6
+      - uses: security-union/audit-check@7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           cargo-lock-path: ./yew-ui

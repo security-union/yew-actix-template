@@ -17,3 +17,4 @@ gloo-console = "0.2.1"
 gloo-utils = "0.1"
 yew-router = "0.16"
 web-sys = { version = "0.3.58", features = ["HtmlDocument"] }
+parity-wasm = "0.45"

@@ -13,7 +13,7 @@ jobs:
       - uses: security-union/audit-check@6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          cargo-lock-path: ./actix-web
+          cargo-lock-path: ./actix-api
       - uses: security-union/audit-check@6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

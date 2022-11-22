@@ -1,4 +1,4 @@
-name: Security audit
+name: Security Audit
 on: [pull_request]
 # on:
 #   push:
@@ -13,5 +13,9 @@ jobs:
       - uses: security-union/audit-check@6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-
+          cargo-lock-path: ./actix-web
+      - uses: security-union/audit-check@6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          cargo-lock-path: ./yew-ui
   

@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: actions-rs/audit-check@v1
+      - uses: security-union/audit-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-        working-directory: ./actix-web
+
   

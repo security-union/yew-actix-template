@@ -1,5 +1,7 @@
 name: Security Audit
 on:
+  schedule:
+    - cron: '0 0 * * *'
   push:
     paths: 
       - '**/Cargo.toml'

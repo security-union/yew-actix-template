@@ -1,0 +1,35 @@
+# Based on https://github.com/actions-rs/meta/blob/master/recipes/quickstart.md
+
+on: 
+  pull_request:
+    paths:
+      - 'actix-api/**'
+      - 'types/**'
+      - Dockerfile.actix
+
+name: check backend
+
+env:
+  ACTIX_PORT: 8080
+  TRUNK_SERVE_PORT: 80
+  TRUNK_SERVE_HOST: localhost
+  OAUTH_CLIENT_ID: OAUTH_CLIENT_ID
+  OAUTH_AUTH_URL: OAUTH_AUTH_URL
+  OAUTH_TOKEN_URL: OAUTH_TOKEN_URL
+  OAUTH_CLIENT_SECRET: OAUTH_CLIENT_SECRET
+  OAUTH_REDIRECT_URL: http://localhost:${ACTIX_PORT:-8080}/login/callback
+  RUST_LOG: info
+  PG_URL: postgres://postgres:docker@postgres:5432/actix-api-db?sslmode=disable
+  
+jobs:
+  test:
+    name: cargo test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@1.66
+        with:
+          components: clippy, rustfmt
+      - run: cd actix-api && cargo clippy -- --deny warnings
+      - run: cd actix-api && cargo fmt --check
+      - run: cd actix-api && cargo test 

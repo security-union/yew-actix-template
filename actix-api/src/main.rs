@@ -28,7 +28,7 @@ const SCOPE: &str = "email%20profile%20openid";
 const ACTIX_PORT: &str = std::env!("ACTIX_PORT");
 const UI_PORT: &str = std::env!("TRUNK_SERVE_PORT");
 const UI_HOST: &str = std::env!("TRUNK_SERVE_HOST");
-const AFTER_LOGIN_URL: &'static str = concat!("http://localhost:", std::env!("TRUNK_SERVE_PORT"));
+const AFTER_LOGIN_URL: &str = concat!("http://localhost:", std::env!("TRUNK_SERVE_PORT"));
 
 pub mod auth;
 pub mod db;
@@ -48,7 +48,7 @@ async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     // 2. Generate and Store OAuth Request.
     let (csrf_token, pkce_challenge) = {
         let pool = pool2.clone();
-        web::block(move || generate_and_store_oauth_request(pool.clone())).await?
+        web::block(move || generate_and_store_oauth_request(pool)).await?
     }
     .map_err(|e| {
         log::error!("{:?}", e);
@@ -168,7 +168,7 @@ async fn main() -> std::io::Result<()> {
         let pool = get_pool();
 
         App::new()
-            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(pool))
             .wrap(cors)
             .service(greet)
             .service(handle_google_oauth_callback)

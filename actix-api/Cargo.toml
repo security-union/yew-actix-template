@@ -9,8 +9,8 @@ description = "Actix-web backend"
 
 [dependencies]
 actix = "0.13.0"
-actix-cors = "0.6.1"
-actix-web = "4.1.0"
+actix-cors = "0.6.4"
+actix-web = "4.3.1"
 types = { path= "../types"}
 serde = "1.0.140"
 reqwest = { version = "0.11.11", features = ["json"]}

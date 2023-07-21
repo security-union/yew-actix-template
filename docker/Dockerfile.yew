@@ -5,3 +5,4 @@ RUN curl https://github.com/amacneil/dbmate/releases/download/v2.4.0/dbmate-linu
 RUN cargo install cargo-watch
 RUN rustup component add clippy-preview
 RUN rustup component add rustfmt
+

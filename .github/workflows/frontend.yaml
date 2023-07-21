@@ -1,0 +1,32 @@
+# Based on https://github.com/actions-rs/meta/blob/master/recipes/quickstart.md
+
+on: 
+  pull_request:
+    paths:
+      - 'yew-ui/**'
+      - 'types/**'
+      - Dockerfile.yew
+      - nginx.conf
+
+
+name: check frontend
+
+env:
+  ACTIX_PORT: {ACTIX_PORT:-8080}
+  TRUNK_SERVE_PORT: ${TRUNK_SERVE_PORT:-80}
+  ENABLE_OAUTH: true
+  LOGIN_URL: http://localhost:${ACTIX_PORT:-8080}/login
+
+jobs:
+  test:
+    name: cargo test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@1.66
+        with:
+          components: clippy, rustfmt
+      # - run: cd yew-ui && cargo clippy -- --deny warnings
+      - run: rustup target add wasm32-unknown-unknown
+      - run: cd yew-ui && cargo fmt --check
+      - run: cd yew-ui && cargo test 

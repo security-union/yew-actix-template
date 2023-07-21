@@ -26,6 +26,11 @@ jobs:
     name: cargo test
     runs-on: ubuntu-latest
     steps:
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            /usr/local/cargo/registry
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@1.66
         with:

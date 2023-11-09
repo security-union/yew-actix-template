@@ -1,15 +1,17 @@
 use actix_cors::Cors;
 use actix_web::{
+    body::{BoxBody, EitherBody},
     cookie::{
         time::{Duration, OffsetDateTime},
         Cookie, SameSite,
     },
+    dev::{ServiceFactory, ServiceRequest, ServiceResponse},
     error, get, http,
     web::{self, Json},
-    App, Error, HttpResponse, HttpServer, dev::{ServiceFactory, ServiceRequest, ServiceResponse}, body::{EitherBody, BoxBody},
+    App, Error, HttpResponse, HttpServer,
 };
 use r2d2::Pool;
-use r2d2_postgres::{PostgresConnectionManager, postgres::NoTls};
+use r2d2_postgres::{postgres::NoTls, PostgresConnectionManager};
 
 use crate::auth::{
     fetch_oauth_request, generate_and_store_oauth_request, request_token, upsert_user,
@@ -148,7 +150,15 @@ async fn greet(name: web::Path<String>) -> Json<HelloResponse> {
     })
 }
 
-pub fn get_app() -> App<impl ServiceFactory<ServiceRequest, Config = (), Response = ServiceResponse<EitherBody<BoxBody>>, Error = actix_web::Error, InitError = ()>> {
+pub fn get_app() -> App<
+    impl ServiceFactory<
+        ServiceRequest,
+        Config = (),
+        Response = ServiceResponse<EitherBody<BoxBody>>,
+        Error = actix_web::Error,
+        InitError = (),
+    >,
+> {
     // TODO: Deal with https, maybe we should just expose this as an env var?
     let allowed_origin = if UI_PORT != "80" {
         format!("http://{}:{}", UI_HOST, UI_PORT)
@@ -156,17 +166,17 @@ pub fn get_app() -> App<impl ServiceFactory<ServiceRequest, Config = (), Respons
         format!("http://{}", UI_HOST)
     };
     let cors = Cors::default()
-            .allowed_origin(allowed_origin.as_str())
-            .allowed_methods(vec!["GET", "POST"])
-            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-            .allowed_header(http::header::CONTENT_TYPE)
-            .max_age(3600);
+        .allowed_origin(allowed_origin.as_str())
+        .allowed_methods(vec!["GET", "POST"])
+        .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+        .allowed_header(http::header::CONTENT_TYPE)
+        .max_age(3600);
 
-        let pool = get_pool();
+    let pool = get_pool();
     App::new()
-            .app_data(web::Data::new(pool))
-            .wrap(cors)
-            .service(greet)
-            .service(handle_google_oauth_callback)
-            .service(login)
+        .app_data(web::Data::new(pool))
+        .wrap(cors)
+        .service(greet)
+        .service(handle_google_oauth_callback)
+        .service(login)
 }

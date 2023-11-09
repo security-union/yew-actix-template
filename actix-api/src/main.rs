@@ -23,7 +23,8 @@ use types::HelloResponse;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
-    HttpServer::new(move || {
-        get_app()
-    }).bind(("0.0.0.0", ACTIX_PORT.parse::<u16>().unwrap()))?.run().await
+    HttpServer::new(move || get_app())
+        .bind(("0.0.0.0", ACTIX_PORT.parse::<u16>().unwrap()))?
+        .run()
+        .await
 }

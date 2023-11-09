@@ -11,8 +11,6 @@ use actix_web::{
     App, Error, HttpResponse,
 };
 
-
-
 use crate::auth::{
     fetch_oauth_request, generate_and_store_oauth_request, request_token, upsert_user,
 };

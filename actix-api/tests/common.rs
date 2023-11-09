@@ -15,4 +15,3 @@ pub fn dbmate_up(url: &str) {
         panic!("Failed to perform dbmate up operation");
     }
 }
-

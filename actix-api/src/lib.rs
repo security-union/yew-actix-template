@@ -8,10 +8,10 @@ use actix_web::{
     dev::{ServiceFactory, ServiceRequest, ServiceResponse},
     error, get, http,
     web::{self, Json},
-    App, Error, HttpResponse, HttpServer,
+    App, Error, HttpResponse,
 };
-use r2d2::Pool;
-use r2d2_postgres::{postgres::NoTls, PostgresConnectionManager};
+
+
 
 use crate::auth::{
     fetch_oauth_request, generate_and_store_oauth_request, request_token, upsert_user,

@@ -16,19 +16,3 @@ pub fn dbmate_up(url: &str) {
     }
 }
 
-pub fn dbmate_drop(url: &str) {
-    log::info!("dbmate drop DATABASE_URL: {}", url);
-    let do_steps = || -> bool {
-        Command::new("sh")
-            .arg("-c")
-            .arg("dbmate drop")
-            .env("DATABASE_URL", url)
-            .status()
-            .expect("failed to execute process")
-            .success()
-    };
-    if !do_steps() {
-        log::error!("Failed to perform dbmate drop operation");
-    }
-}
-

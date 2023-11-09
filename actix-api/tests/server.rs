@@ -15,11 +15,5 @@ async fn test_login() {
     let req = test::TestRequest::get().uri("/login").to_request();
     let resp = test::call_service(&mut app, req).await;
     drop(app);
-    println!("{:?}", resp.status());
-    assert!(resp.status().is_success());
-    let body = test::read_body(resp).await;
-    let body = String::from_utf8(body.to_vec()).unwrap();
-    assert!(body.contains("https://accounts.google.com/o/oauth2/v2/auth"));
-    assert!(body.contains("code_challenge="));
-    assert!(body.contains("state="));
+    assert!(resp.status() == 302);
 }

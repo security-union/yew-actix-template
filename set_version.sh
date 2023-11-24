@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Specify the new version
-NEW_VERSION="1.0.0"
+NEW_VERSION="1.3.0"
 
 # List of directories containing Cargo.toml files
 CRATES=("types" "actix-api" "yew-ui")

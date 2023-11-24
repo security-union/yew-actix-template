@@ -3,6 +3,7 @@ use anyhow::{anyhow, Result as Anysult};
 use oauth2::{CsrfToken, PkceCodeChallenge};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use sqlx::{query, Row};
 
 use crate::db::PostgresPool;
 
@@ -56,59 +57,54 @@ pub struct Claims {
     pub name: String,
 }
 
-pub fn generate_and_store_oauth_request(
+pub async fn generate_and_store_oauth_request(
     pool: web::Data<PostgresPool>,
-) -> Anysult<(CsrfToken, PkceCodeChallenge)> {
-    let mut connection = pool.get()?;
+) -> Result<(CsrfToken, PkceCodeChallenge), sqlx::Error> {
     let csrf_state = CsrfToken::new_random();
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
-    connection.query(
-        "INSERT INTO oauth_requests (pkce_challenge, pkce_verifier, csrf_state)
-                       VALUES ($1, $2, $3)
-            ",
-        &[
-            &pkce_challenge.as_str(),
-            &pkce_verifier.secret().as_str(),
-            &csrf_state.secret().clone(),
-        ],
-    )?;
+
+    query("INSERT INTO oauth_requests (pkce_challenge, pkce_verifier, csrf_state) VALUES ($1, $2, $3)")
+        .bind(pkce_challenge.as_str())
+        .bind(pkce_verifier.secret().as_str())
+        .bind(csrf_state.secret())
+        .execute(&**pool)
+        .await?;
+
     Ok((csrf_state, pkce_challenge))
 }
 
-pub fn fetch_oauth_request(pool: web::Data<PostgresPool>, state: String) -> Anysult<OAuthRequest> {
-    let mut connection = pool.get()?;
-    let result = connection.query(
-        "SELECT * FROM oauth_requests WHERE csrf_state=$1",
-        &[&state],
-    )?;
-    result
-        .iter()
-        .fold(Err(anyhow!("Unable to find request")), |_acc, row| {
-            Ok(OAuthRequest {
-                csrf_state: row.get("csrf_state"),
-                pkce_challenge: row.get("pkce_challenge"),
-                pkce_verifier: row.get("pkce_verifier"),
-            })
-        })
+pub async fn fetch_oauth_request(
+    pool: web::Data<PostgresPool>,
+    state: String,
+) -> anyhow::Result<OAuthRequest> {
+    let row = query("SELECT * FROM oauth_requests WHERE csrf_state = $1")
+        .bind(state)
+        .fetch_one(&**pool)
+        .await?;
+
+    Ok(OAuthRequest {
+        pkce_challenge: row.get("pkce_challenge"),
+        pkce_verifier: row.get("pkce_verifier"),
+        csrf_state: row.get("csrf_state"),
+    })
 }
 
-pub fn upsert_user(
+pub async fn upsert_user(
     pool: web::Data<PostgresPool>,
     claims: &Claims,
     oauth_response: &OAuthResponse,
-) -> Anysult<()> {
-    let mut connection = pool.get()?;
-    connection.query(
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
         "INSERT INTO users (email, access_token, refresh_token) VALUES ($1, $2, $3)
-                ON CONFLICT (email)
-                    DO UPDATE
-                        SET access_token = $2, refresh_token = $3",
-        &[
-            &claims.email,
-            &oauth_response.access_token,
-            &oauth_response.refresh_token,
-        ],
-    )?;
+         ON CONFLICT (email)
+         DO UPDATE SET access_token = $2, refresh_token = $3",
+    )
+    .bind(&claims.email)
+    .bind(&oauth_response.access_token)
+    .bind(&oauth_response.refresh_token)
+    .execute(&**pool)
+    .await?;
+
     Ok(())
 }
 

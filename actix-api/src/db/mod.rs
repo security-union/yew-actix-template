@@ -1,5 +1,5 @@
 use sqlx::{
-    postgres::{PgPoolOptions, PgRow},
+    postgres::{PgPoolOptions},
     PgPool,
 };
 use std::env;

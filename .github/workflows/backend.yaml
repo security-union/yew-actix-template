@@ -11,16 +11,6 @@ on:
 name: check backend
 
 env:
-  ACTIX_PORT: 8080
-  TRUNK_SERVE_PORT: 80
-  TRUNK_SERVE_HOST: localhost
-  OAUTH_CLIENT_ID: OAUTH_CLIENT_ID
-  OAUTH_AUTH_URL: OAUTH_AUTH_URL
-  OAUTH_TOKEN_URL: OAUTH_TOKEN_URL
-  OAUTH_CLIENT_SECRET: OAUTH_CLIENT_SECRET
-  OAUTH_REDIRECT_URL: http://localhost:${ACTIX_PORT:-8080}/login/callback
-  RUST_LOG: info
-  PG_URL: postgres://postgres:docker@postgres:5432/actix-api-db?sslmode=disable
   
 jobs:
   test:
@@ -28,5 +18,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      # Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.docker
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      # Cache Rust build artifacts
+      - name: Cache Cargo Registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      # Load cached Docker images
+      - name: Load cached Docker images
+        run: |
+          mkdir -p /tmp/.docker
+          if [ -d "/tmp/.docker" ]; then
+            docker load < /tmp/.docker/images.tar || true
+          fi
+
       - run: make check
       - run: make test
+
+       # Save Docker images after tests
+      - name: Save Docker images
+        run: |
+          mkdir -p /tmp/.docker
+          docker save -o /tmp/.docker/images.tar $(docker-compose -f docker/docker-compose.yaml config --services | awk '{print $1}')

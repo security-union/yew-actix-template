@@ -27,9 +27,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@1.66
-        with:
-          components: clippy, rustfmt
-      - run: cd actix-api && cargo clippy -- --deny warnings
-      - run: cd actix-api && cargo fmt --check
-      - run: cd actix-api && cargo test 
+      - run: make test

@@ -38,19 +38,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      # Load cached Docker images
-      - name: Load cached Docker images
-        run: |
-          mkdir -p /tmp/.docker
-          if [ -d "/tmp/.docker" ]; then
-            docker load < /tmp/.docker/images.tar || true
-          fi
-
       - run: make check
       - run: make test
-
-       # Save Docker images after tests
-      - name: Save Docker images
-        run: |
-          mkdir -p /tmp/.docker
-          docker save -o /tmp/.docker/images.tar $(docker-compose -f docker/docker-compose.yaml config --services | awk '{print $1}')

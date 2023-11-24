@@ -9,8 +9,6 @@ on:
       - 'docker/**'
 
 name: check backend
-
-env:
   
 jobs:
   test:

@@ -9,3 +9,4 @@ All notable changes to this project will be documented in this file.
 - Replaced PostgreSQL with SQLx for database interactions. This shift to SQLx modernizes the database access layer, providing more flexibility and asynchronous support.
 
 (PR [#26](https://github.com/security-union/yew-actix-template/pull/26))
+(PR [#27](https://github.com/security-union/yew-actix-template/pull/27))

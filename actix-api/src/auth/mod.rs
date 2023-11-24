@@ -76,7 +76,7 @@ pub async fn generate_and_store_oauth_request(
 pub async fn fetch_oauth_request(
     pool: web::Data<PostgresPool>,
     state: String,
-) -> Result<OAuthRequest, anyhow::Error> {
+) -> anyhow::Result<OAuthRequest> {
     let row = query("SELECT * FROM oauth_requests WHERE csrf_state = $1")
         .bind(state)
         .fetch_one(&**pool)

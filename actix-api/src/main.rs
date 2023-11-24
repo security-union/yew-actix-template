@@ -48,7 +48,7 @@ async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     // 2. Generate and Store OAuth Request.
     let (csrf_token, pkce_challenge) = {
         let pool = pool2.clone();
-        web::block(move || generate_and_store_oauth_request(pool)).await?
+        generate_and_store_oauth_request(pool).await?
     }
     .map_err(|e| {
         log::error!("{:?}", e);

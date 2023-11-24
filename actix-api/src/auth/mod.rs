@@ -3,6 +3,7 @@ use anyhow::{anyhow, Result as Anysult};
 use oauth2::{CsrfToken, PkceCodeChallenge};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use sqlx::query;
 
 use crate::db::PostgresPool;
 
@@ -56,22 +57,19 @@ pub struct Claims {
     pub name: String,
 }
 
-pub fn generate_and_store_oauth_request(
+pub async fn generate_and_store_oauth_request(
     pool: web::Data<PostgresPool>,
-) -> Anysult<(CsrfToken, PkceCodeChallenge)> {
-    let mut connection = pool.get()?;
+) -> Result<(CsrfToken, PkceCodeChallenge), sqlx::Error> {
     let csrf_state = CsrfToken::new_random();
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
-    connection.query(
-        "INSERT INTO oauth_requests (pkce_challenge, pkce_verifier, csrf_state)
-                       VALUES ($1, $2, $3)
-            ",
-        &[
-            &pkce_challenge.as_str(),
-            &pkce_verifier.secret().as_str(),
-            &csrf_state.secret().clone(),
-        ],
-    )?;
+
+    query("INSERT INTO oauth_requests (pkce_challenge, pkce_verifier, csrf_state) VALUES ($1, $2, $3)")
+        .bind(pkce_challenge.as_str())
+        .bind(pkce_verifier.secret().as_str())
+        .bind(csrf_state.secret())
+        .execute(&**pool)
+        .await?;
+
     Ok((csrf_state, pkce_challenge))
 }
 

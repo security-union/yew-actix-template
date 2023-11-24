@@ -5,7 +5,8 @@ on:
     paths:
       - 'actix-api/**'
       - 'types/**'
-      - Dockerfile.actix
+      - 'yew-ui/**'
+      - 'docker/**'
 
 name: check backend
 
@@ -27,4 +28,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - run: make check
       - run: make test

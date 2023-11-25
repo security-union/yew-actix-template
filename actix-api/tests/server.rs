@@ -11,7 +11,7 @@ use types::HelloResponse;
 async fn test_login() {
     let db_url = std::env::var("PG_URL").unwrap();
     println!("DB_URL: {}", db_url);
-    common::dbmate_up(&db_url);
+    common::dbmate_rebuild(&db_url);
     let mut app = test::init_service(get_app()).await;
     let req = test::TestRequest::get().uri("/hello/dario").to_request();
     let resp = test::call_service(&mut app, req).await;

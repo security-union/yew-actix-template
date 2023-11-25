@@ -1,4 +1,5 @@
 use actix_api::{get_app, ACTIX_PORT};
+use actix_web::HttpServer;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

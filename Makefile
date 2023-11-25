@@ -2,7 +2,7 @@ test:
 		make test-api
 		make test-ui
 test-api:
-		docker compose -f docker/docker-compose.yaml run actix-api bash -c "cd app/actix-api && cargo test -- --nocapture"
+		docker compose -f docker/docker-compose.yaml run actix-api bash -c "cd app/actix-api && cargo test -- --nocapture --test-threads=1"
 test-ui:
 		docker compose -f docker/docker-compose.yaml run yew-ui bash -c "cd app/yew-ui && cargo test"
 up:

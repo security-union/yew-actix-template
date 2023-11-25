@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - Unreleased
+## Changed
+- Added integration tests for the backend. This change ensures that the backend is tested in a more realistic environment, providing more confidence in the application's functionality.
+
+(PR [#28](https://github.com/security-union/yew-actix-template/pull/25))
+
 ## [1.3.0] - 2023-11-24
 ### Changed
 - Added versioning and changelog.

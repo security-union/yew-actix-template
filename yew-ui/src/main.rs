@@ -25,7 +25,7 @@ lazy_static! {
     static ref ENABLE_OAUTH: bool = truthy(std::env!("ENABLE_OAUTH").to_string());
 }
 
-#[derive(Clone, Routable, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Routable)]
 enum Route {
     #[at("/login")]
     Login,
@@ -36,7 +36,7 @@ enum Route {
     NotFound,
 }
 
-fn switch(routes: &Route) -> Html {
+fn switch(routes: Route) -> Html {
     match routes {
         Route::Login => html! { <Login/> },
         Route::Main => html! {
@@ -62,7 +62,7 @@ fn app_component() -> Html {
     if *ENABLE_OAUTH {
         html! {
             <BrowserRouter>
-            <Switch<Route> render={Switch::render(switch)} />
+            <Switch<Route> render={switch} />
             </BrowserRouter>
         }
     } else {
@@ -156,5 +156,5 @@ fn get_example() -> Html {
 }
 
 fn main() {
-    yew::start_app::<App>();
+    yew::Renderer::<App>::new().render();
 }

@@ -50,7 +50,7 @@ async fn login(pool: web::Data<PostgresPool>) -> Result<HttpResponse, Error> {
     // 2. Generate and Store OAuth Request.
     let (csrf_token, pkce_challenge) = {
         let pool = pool2.clone();
-        web::block(move || generate_and_store_oauth_request(pool)).await?
+        generate_and_store_oauth_request(pool).await
     }
     .map_err(|e| {
         log::error!("{:?}", e);
@@ -91,7 +91,7 @@ async fn handle_google_oauth_callback(
     // 1. Fetch OAuth request, if this fails, probably a hacker is trying to p*wn us.
     let oauth_request = {
         let pool = pool.clone();
-        web::block(move || fetch_oauth_request(pool, state)).await?
+        fetch_oauth_request(pool, state).await
     }
     .map_err(|e| {
         log::error!("{:?}", e);
@@ -116,7 +116,7 @@ async fn handle_google_oauth_callback(
     // 3. Store tokens and create user.
     {
         let claims = claims.clone();
-        web::block(move || upsert_user(pool, &claims, &oauth_response)).await?
+        upsert_user(pool, &claims, &oauth_response).await
     }
     .map_err(|err| {
         log::error!("{:?}", err);
